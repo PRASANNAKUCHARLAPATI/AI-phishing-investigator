@@ -90,7 +90,7 @@ RECOMMENDED ACTIONS FOR SOC
   8. Report phishing domain to abuse contacts
 
 ============================================================
-Report generated: 2026-04-21 14:09:34
+Report generated: 2026-06-28 12:31:20
 ============================================================
 
-This email is likely phishing because the suspicious domain "blog1seguimentmydomaine2bra.me" does not appear to be a legitimate or well-known website, and the use of a Linux host as the return-path suggests that the email may be spoofing the sender's identity. Additionally, the Cloud VPS IP address 137.184.34.4 is often associated with malicious activity
+AI explanation unavailable: HTTPConnectionPool(host='127.0.0.1', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError("HTTPConnection(host='127.0.0.1', port=11434): Failed to establish a new connection: [Errno 61] Connection refused"))

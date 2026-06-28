@@ -1,60 +1,66 @@
-from whitelist import WHITELIST_DOMAINS
+from __future__ import annotations
 
-def analyze_email(data):
-    score = 0
-    reasons = []
+from typing import Any, Dict, List, Tuple
 
-    headers = data.get("headers", "")
-    urls = data.get("urls", [])
-    domains = data.get("domains", [])
-    ips = data.get("ips", [])
+from rules.auth_rules import AuthFailureRule
+from rules.base import CompositeRule, Rule
+from rules.content_rules import FearLanguageRule, FormExfilRule
+from rules.domain_rules import DomainRule
+from rules.header_rules import SuspiciousHostRule
+from rules.ip_rules import CloudVPSRule
+from whitelist import get_config
 
-    # Rule 1: SPF/DKIM/DMARC failure
-    spf_fail = "spf=temperror" in headers.lower()
-    if spf_fail:
-        score += 2
-        reasons.append("SPF failure")
 
-    dkim_signed = "dkim=pass" in headers.lower()
-    if "dkim=none" in headers.lower():
-        score += 2
-        reasons.append("No DKIM signature")
+def build_detector() -> CompositeRule:
+    whitelist = get_config()
+    rules: List[Rule] = [
+        AuthFailureRule(),
+        SuspiciousHostRule(),
+        DomainRule(whitelist=whitelist),
+        FearLanguageRule(),
+        FormExfilRule(whitelist=whitelist),
+        CloudVPSRule(),
+    ]
+    return CompositeRule(rules)
 
-    dmarc_fail = "dmarc=temperror" in headers.lower()
-    if dmarc_fail:
-        score += 2
-        reasons.append("DMARC failure")
 
-    # Rule 2: Suspicious return path
-    if "ubuntu" in headers.lower() or "root@" in headers.lower():
-        score += 2
-        reasons.append("Suspicious return-path (Linux host)")
+def analyze_email(data: Dict[str, Any]) -> Dict[str, Any]:
+    detector = build_detector()
+    total_score = 0
+    reasons: List[str] = []
+    auth_results = {
+        "spf_fail": "spf=temperror" in data.get("headers", "").lower() or "spf=fail" in data.get("headers", "").lower(),
+        "dkim_pass": "dkim=pass" in data.get("headers", "").lower(),
+        "dkim_fail": "dkim=none" in data.get("headers", "").lower() or "dkim=fail" in data.get("headers", "").lower(),
+        "dmarc_fail": "dmarc=temperror" in data.get("headers", "").lower() or "dmarc=fail" in data.get("headers", "").lower(),
+    }
 
-    # Rule 3: Suspicious domain patterns (with whitelist)
-    for d in domains:
-        # Skip whitelisted domains
-        if any(w in d for w in WHITELIST_DOMAINS):
-            continue
+    if hasattr(detector, "rules"):
+        for rule in detector.rules:
+            try:
+                triggered, score, reason = rule.check(data)
+                if triggered:
+                    total_score += score
+                    reasons.append(reason)
+            except Exception as exc:
+                import logging
+                logging.getLogger(__name__).warning("Rule %s failed: %s", rule.name, exc)
 
-        if ".me" in d or "blog" in d or "segui" in d:
-            score += 3
-            reasons.append(f"Suspicious domain: {d}")
-
-    # Rule 4: IP from cloud VPS range (basic check)
-    for ip in ips:
-        if ip.startswith("137."):
-            score += 2
-            reasons.append(f"Cloud VPS IP: {ip}")
-
-    verdict = "PHISHING" if score >= 6 else "SUSPICIOUS"
+    if total_score >= 8:
+        verdict = "PHISHING"
+    elif total_score >= 4:
+        verdict = "SUSPICIOUS"
+    else:
+        verdict = "CLEAN"
 
     return {
-        "score": score,
+        "score": total_score,
         "verdict": verdict,
         "reasons": reasons,
-        "auth_results": {
-            "spf_fail": spf_fail,
-            "dkim_signed": dkim_signed,
-            "dmarc_fail": dmarc_fail
-        }
+        "auth_results": auth_results,
+        "iocs": {
+            "urls": data.get("urls", []),
+            "domains": data.get("domains", []),
+            "ips": data.get("ips", []),
+        },
     }
