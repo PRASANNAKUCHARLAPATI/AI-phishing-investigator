@@ -142,7 +142,7 @@ def batch_analyze(
         try:
             if status_callback:
                 status_callback(f"Analyzing ({idx}/{len(eml_files)}): {eml_path.name}")
-            file_case_dir = output_dir / eml_path.stem
+            file_case_dir = generate_case_directory(eml_path, {}, output_dir=output_dir)
             result = analyze_file(
                 eml_path,
                 file_case_dir,
@@ -365,7 +365,7 @@ Examples:
         return 1
 
     try:
-        case_dir = generate_case_directory(args.input, {})
+        case_dir = generate_case_directory(args.input, {}, output_dir=args.output)
         result = analyze_file(
             args.input,
             case_dir,

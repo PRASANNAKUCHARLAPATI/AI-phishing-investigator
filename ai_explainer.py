@@ -152,12 +152,5 @@ def ai_explain(
         fh.write(explanation)
         fh.write("\n")
 
-    with open(case_dir / "report.txt", "a", encoding="utf-8") as fh:
-        fh.write("\n\n" + "=" * 60 + "\n")
-        fh.write("AI-POWERED ANALYSIS\n")
-        fh.write("=" * 60 + "\n\n")
-        fh.write(explanation)
-        fh.write("\n")
-
     logger.info("AI explanation saved to %s", ai_path)
     return True

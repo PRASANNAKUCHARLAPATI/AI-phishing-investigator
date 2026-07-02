@@ -1,33 +1,11 @@
 # PHISHX
 
-Open-source AI Investigation Platform for Phishing, Campaign Correlation, and SOC Automation.
+Open-source automated phishing email investigation tool for SOC teams.
 
 > "One Email. One Investigation. One Campaign. Everything Connected."
 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-
-## Highlights
-
-- Offline-first AI investigation platform
-- Interactive SOC console inspired by Metasploit
-- Local AI support through Ollama
-- Threat DNA fingerprinting
-- Campaign correlation engine
-- Investigation memory using SQLite
-- Free OSINT integrations
-- Automatic Sigma/YARA/Suricata rule generation
-- MITRE ATT&CK mapping
-
-## Why PHISHX?
-
-PHISHX is an offline-first AI-powered phishing investigation platform built for Security Operations Centers (SOC), DFIR teams, and threat hunters.
-
-Instead of simply classifying phishing emails, PHISHX reconstructs attacker infrastructure, correlates related phishing campaigns, builds investigation knowledge, and assists analysts throughout the investigation lifecycle.
-
-Every analyzed email becomes part of a continuously growing investigation database, allowing analysts to discover relationships between infrastructure, phishing kits, domains, senders, and campaigns over time.
-
-The platform is designed to work entirely with open-source technologies and local AI models, making enterprise-grade phishing investigations accessible without paid APIs.
 
 ## What PHISHX Does
 
@@ -36,54 +14,11 @@ PHISHX transforms phishing investigation from a one-off scan into a persistent i
 1. **Investigate** — Parse emails, extract IOCs, run detection rules, and generate reports
 2. **Remember** — Every case is stored in a local SQLite database with full IOC history
 3. **Correlate** — Threat DNA fingerprinting links related emails and campaigns automatically
-4. **Enrich** — Free OSINT integrations (URLhaus, AbuseIPDB, CISA KEV, RDAP, etc.) without paid APIs
+4. **Enrich** — Free OSINT integrations (URLhaus, AbuseIPDB, CISA KEV, RDAP, etc.)
 5. **Automate** — Generate Sigma, YARA, and Suricata rules directly from investigation results
 6. **Assist** — On-demand AI Q&A via Ollama, OpenAI, or Anthropic
 
-This turns PHISHX from a "phishing scanner" into a SOC investigation assistant that gets smarter with every email analyzed.
-
-### Architecture
-
-```
-                 Email (.eml)
-                      │
-                      ▼
-              Email Parsing Engine
-                      │
-          ┌───────────┴────────────┐
-          ▼                        ▼
-    IOC Extraction          HTML Analysis
-          │                        │
-          └───────────┬────────────┘
-                      ▼
-              Detection Engine
-                      │
-        ┌─────────────┼──────────────┐
-        ▼             ▼              ▼
- Threat Intel     Threat DNA      AI Engine
-        │             │              │
-        └─────────────┴──────────────┘
-                      ▼
-            Investigation Memory
-                      │
-      ┌───────────────┼────────────────┐
-      ▼               ▼                ▼
- Campaigns      Reports           Rule Generator
-```
-
-## Why PHISHX is Different
-
-| Traditional Phishing Tool | PHISHX |
-|---------------------------|--------|
-| Analyze one email | Builds long-term investigation memory |
-| IOC extraction | IOC correlation across cases |
-| Static reports | Interactive investigation console |
-| Simple verdict | AI-assisted investigation |
-| No context | Campaign intelligence |
-| No rule generation | Generates Sigma/YARA/Suricata |
-| One investigation | Continuous knowledge base |
-
-## Implemented Features
+## Features
 
 ### Interactive SOC Console
 
@@ -119,7 +54,7 @@ phishx(sample.eml) > ask "Why is this phishing?"
 phishx(sample.eml) > exit
 ```
 
-### Available Commands
+### Console Commands
 
 | Command | Description |
 |---------|-------------|
@@ -129,8 +64,7 @@ phishx(sample.eml) > exit
 | `urls` / `domains` / `ips` | List extracted indicators |
 | `headers` / `forms` / `attachments` | Drill into email structure |
 | `mitre` | Show MITRE ATT&CK mapping |
-| `intel urlhaus` | Enrich IoCs with URLhaus |
-| `intel virustotal --api-key KEY` | Enrich IoCs with VirusTotal |
+| `intel <provider>` | Enrich IoCs with URLhaus or VirusTotal |
 | `intel history <ioc>` | Look up IOC history in local DB |
 | `intel osint <provider>` | Query free OSINT (abuseipdb, rdap, doh, phishtank, alienvault-otx, cisa-kev) |
 | `dna` | Show threat DNA fingerprint and similar cases |
@@ -138,10 +72,29 @@ phishx(sample.eml) > exit
 | `relationships` | Show related cases from memory |
 | `rules [sigma\|yara\|suricata\|all]` | Generate detection rules |
 | `note <text>` | Add analyst note to case |
+| `ask <question>` | Ask the AI assistant about the case |
 | `cases` / `use <id>` | Multi-case workspace management |
 | `history` / `clear` | Session utilities |
-| `ask <question>` | Ask the AI assistant about the case |
-| `exit` | Exit console |
+| `export [format]` | Export report (text/json/mitre) |
+| `exit` / `quit` | Exit console |
+
+### Single-File Analysis
+
+```bash
+phishx sample.eml
+phishx sample.eml --format json
+phishx sample.eml --no-ai
+```
+
+### Batch & Monitoring Modes
+
+```bash
+# Analyze all .eml files in a directory
+phishx ./incoming_emails --output ./reports
+
+# Monitor a directory for new emails
+phishx ./maildir --monitor
+```
 
 ### Email Forensics
 
@@ -176,8 +129,9 @@ Every investigation is persisted locally:
 - Cases with verdicts, scores, and timestamps
 - IOC history with seen counts across investigations
 - Analyst notes per case
-- Case relationships and similarity links
+- Case relationships and similarity links via Threat DNA
 - Campaign tracking tables
+- Rule suggestions per case
 
 Database location: `phishx_memory.db` (configurable via `--db`)
 
@@ -199,16 +153,16 @@ DNA enables similarity search across investigations.
 
 ### Free OSINT Integration
 
-No paid APIs required. Built-in providers:
+Built-in providers:
 
 - **URLhaus** — URL reputation (no key required)
-- **PhishTank** — Phishing URL database
+- **VirusTotal** — URL/domain/IP reputation (API key required)
 - **AbuseIPDB** — IP abuse scoring (optional key)
 - **AlienVault OTX** — Threat intelligence pulses (optional key)
 - **CISA KEV** — Known exploited vulnerabilities catalog
 - **RDAP** — Registration data for IPs/domains
 - **DNS over HTTPS** — Domain resolution via Google DNS
-- **crt.sh** — Certificate transparency logs
+- **PhishTank** — Phishing URL database
 
 ### Detection Rule Generator
 
@@ -237,52 +191,6 @@ Multiple output formats:
 - MITRE ATT&CK Navigator layer
 - AI explanation (appended to text report)
 
-### Batch & Monitoring Modes
-
-```bash
-# Analyze all .eml files in a directory
-./phishx ./incoming_emails --output ./reports
-
-# Monitor a directory for new emails
-./phishx ./maildir --monitor
-```
-
-## Technology Stack
-
-### Backend
-- Python 3.9+
-
-### Console
-- Rich
-
-### Parsing
-- email (stdlib)
-- BeautifulSoup
-- lxml
-
-### Database
-- SQLite
-
-### AI
-- Ollama
-- OpenAI
-- Anthropic
-
-### Threat Intelligence
-- URLhaus
-- PhishTank
-- AbuseIPDB
-- AlienVault OTX
-- CISA KEV
-
-### Detection Engineering
-- Sigma
-- YARA
-- Suricata
-
-### Testing
-- pytest
-
 ## Installation
 
 ```bash
@@ -294,11 +202,11 @@ cd ai-phishing-investigator
 python3 -m venv venv
 source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install package and console entry points
+pip install -e .
 
-# Run
-./phishx
+# Run interactive console
+phishx
 ```
 
 ## Requirements
@@ -306,31 +214,42 @@ pip install -r requirements.txt
 - Python 3.9+
 - Core: `requests`, `beautifulsoup4`, `lxml`, `rich`
 
-## Single-File Analysis
+## CLI Reference
 
-```bash
-./phishx sample.eml
-./phishx sample.eml --format json
-./phishx sample.eml --no-ai
-./phishx sample.eml --intel-provider virustotal --intel-api-key YOUR_KEY
 ```
+usage: phishx [-h] [-o OUTPUT] [--no-ai] [--ai-provvider {ollama,openai,anthropic}]
+              [--ai-model AI_MODEL] [--ai-api-key AI_API_KEY] [--ai-base-url AI_BASE_URL]
+              [--no-mitre] [--whitelist WHITELIST] [--whitelist-mode {exact,subdomain}]
+              [--format {text,json,both}] [--monitor] [--verbose] [--log-file LOG_FILE]
+              [--sound] [--db DB]
+              [input]
 
-## Database & Sound Options
+positional arguments:
+  input                 Path to .eml file or directory of .eml files
 
-```bash
-# Custom database path
-./phishx sample.eml --db ./cases/memory.db
-
-# Enable sound alerts for critical findings
-./phishx --sound
+optional arguments:
+  -o, --output OUTPUT   Output directory (default: reports)
+  --no-ai               Disable AI explanation generation
+  --ai-provider {ollama,openai,anthropic}
+                        AI provider (default: ollama)
+  --ai-model AI_MODEL   AI model name (default: llama3.2)
+  --ai-api-key AI_API_KEY
+                        API key for OpenAI/Anthropic
+  --ai-base-url AI_BASE_URL
+                        Base URL for Ollama (default: http://127.0.0.1:11434)
+  --no-mitre            Skip MITRE ATT&CK Navigator layer generation
+  --whitelist WHITELIST
+                        Path to custom whitelist file
+  --whitelist-mode {exact,subdomain}
+                        Whitelist matching mode (default: subdomain)
+  --format {text,json,both}
+                        Report format (default: both)
+  --monitor             Monitor directory for new .eml files
+  --verbose, -v         Enable debug logging
+  --log-file LOG_FILE   Write logs to file
+  --sound               Enable sound alerts for critical findings
+  --db DB               Path to investigation memory database (default: phishx_memory.db)
 ```
-
-## MITRE ATT&CK Mapping
-
-- T1566.002 — Phishing: Link
-- T1583.001 — Acquire Infrastructure: Domains
-- T1583.003 — Acquire Infrastructure: VPS
-- T1056.004 — Input Capture: Credential Phishing
 
 ## AI Configuration
 
@@ -338,21 +257,21 @@ pip install -r requirements.txt
 
 ```bash
 ollama pull llama3.2
-./phishx --ai-provider ollama --ai-model llama3.2
+phishx --ai-provider ollama --ai-model llama3.2
 ```
 
 ### OpenAI
 
 ```bash
 export OPENAI_API_KEY="sk-..."
-./phishx --ai-provider openai --ai-model gpt-4o
+phishx --ai-provider openai --ai-model gpt-4o
 ```
 
 ### Anthropic
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
-./phishx --ai-provider anthropic --ai-model claude-sonnet-4-20250514
+phishx --ai-provider anthropic --ai-model claude-sonnet-4-20250514
 ```
 
 ## Testing
@@ -370,12 +289,6 @@ ruff check .
 ruff format .
 ```
 
-## Contributing
-
-Contributions are welcome.
-
-If you have ideas for new detection rules, threat intelligence providers, campaign correlation techniques, or AI investigation workflows, feel free to open an issue or submit a pull request.
-
 ## Disclaimer
 
 PHISHX is intended for defensive security, malware analysis, phishing investigation, incident response, and educational purposes only.
@@ -385,54 +298,3 @@ The project is not intended to facilitate unauthorized access or offensive cyber
 ## License
 
 MIT License
-
----
-
-## Roadmap
-
-The following capabilities are planned but not yet implemented in this branch:
-
-### Phase 1 — Intelligence Layer
-- [ ] FAISS-powered semantic similarity search across Threat DNA
-- [ ] Sentence-transformers embeddings for IOC and case clustering
-- [ ] Automated campaign detection via graph clustering (NetworkX)
-- [ ] crt.sh integration for certificate transparency lookups
-- [ ] Shodan InternetDB integration
-- [ ] Automated registrar and hosting provider enrichment (RDAP expansion)
-
-### Phase 2 — Advanced Console Commands
-- [ ] `graph` — Render knowledge graph inline in terminal
-- [ ] `hunt` — Run hypothesis-driven IOC hunting across memory
-- [ ] `story` — AI-generated attack narrative from investigation evidence
-- [ ] `compare <case-id>` — Side-by-side case comparison with AI
-- [ ] `campaign create` / `campaign merge` — Manual and AI-assisted campaign management
-- [ ] `export pdf` / `export html` — Additional report formats
-- [ ] `timeline` — Investigation event timeline view
-
-### Phase 3 — AI Investigation Engine
-- [ ] Context-aware AI that reasons over full case history, not just single investigations
-- [ ] Predictive threat hunting suggestions
-- [ ] Automated rule tuning based on false-positive feedback
-- [ ] Executive summary generation for non-technical stakeholders
-- [ ] IOC prioritization and enrichment recommendations
-
-### Phase 4 — Detection Engineering
-- [ ] Wazuh rule generation
-- [ ] Zeek/Bro script generation
-- [ ] Splunk SPL generation
-- [ ] Elasticsearch query generation
-- [ ] STIX/TAXII export for threat intelligence sharing
-
-### Phase 5 — Visualization
-- [ ] FastAPI backend for web-based dashboard
-- [ ] Knowledge graph visualization (D3.js / vis.js)
-- [ ] Campaign timeline charts
-- [ ] IOC heatmaps and infrastructure maps
-- [ ] Investigation workspace UI
-
-### Phase 6 — Platform Integration
-- [ ] TheHive / Cortex integration
-- [ ] Wazuh SIEM integration
-- [ ] MISP import/export
-- [ ] Slack/PagerDuty alerting
-- [ ] Docker / Kubernetes deployment

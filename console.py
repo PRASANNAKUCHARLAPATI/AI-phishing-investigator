@@ -157,7 +157,7 @@ class PhishXConsole:
 
     def _load_case(self, file_path: Path) -> Case:
         self.case_counter += 1
-        case_dir = generate_case_directory(file_path, {})
+        case_dir = generate_case_directory(file_path, {}, output_dir=self.output_dir)
         case = Case(file_path=file_path, case_dir=case_dir)
         self.cases[self.case_counter] = case
         self.active_case_id = self.case_counter

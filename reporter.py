@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -29,20 +30,20 @@ def _filename_base(case_id: str, ts: str) -> str:
     return f"phish_report_{case_id}_{ts}"
 
 
-def generate_case_directory(email_path: str | Path, email_data: Dict[str, Any]) -> Path:
+def generate_case_directory(email_path: str | Path, email_data: Dict[str, Any], output_dir: Optional[Path] = None) -> Path:
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    case_id = _case_id(email_path, email_data)
-    base = _filename_base(case_id, ts)
-    case_dir = Path(base)
+    source_stem = Path(email_path).stem if email_path else "unknown"
+    safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', source_stem)[:40]
+    base_name = f"{ts}_{safe_stem}"
+    if output_dir is None:
+        output_dir = Path("reports")
+    case_dir = output_dir / base_name
     case_dir.mkdir(parents=True, exist_ok=True)
     logger.info("Case directory created: %s", case_dir)
     return case_dir
 
 
 def _safe_case_id(case_dir: Path) -> str:
-    parts = case_dir.name.split("_")
-    if len(parts) >= 3:
-        return parts[2]
     return case_dir.name
 
 
